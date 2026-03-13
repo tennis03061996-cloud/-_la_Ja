@@ -2,23 +2,34 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>CodeLexicon Ultimate - Complete Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLexicon - Pro Max</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='60' fill='%2360a5fa'>&lt;/&gt;</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='60' fill='%2360a5fa'>&lt;/&gt;</text></svg>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900" x-data="lexiconApp">
 
-    <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-5 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-black italic">CODE<span class="text-blue-300">LEXICON</span></h1>
-            <div class="flex items-center gap-4">
+    <header class="bg-gradient-to-r from-slate-900 to-indigo-900 text-white p-5 shadow-xl sticky top-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-2">
+                <span class="bg-blue-500 text-white px-2 py-1 rounded text-xl">&lt;/&gt;</span>
+                CODE<span class="text-blue-400">LEXICON</span>
+            </h1>
+            
+            <div class="flex items-center gap-4 flex-1 justify-end min-w-[300px]">
                 <div class="flex flex-col items-end">
-                    <span class="text-[10px] text-blue-200">Gemini API Key:</span>
-                    <input type="password" x-model="apiKey" class="bg-white/10 border border-white/20 p-1 rounded text-white text-sm focus:bg-white/20 outline-none w-48" placeholder="APIキーを入力...">
+                    <span class="text-[10px] text-blue-200">Gemini 2.5 API Key:</span>
+                    <input type="password" x-model="apiKey" class="bg-white/10 border border-white/20 p-2 rounded text-white text-xs focus:bg-white/20 outline-none w-full max-w-[200px]" placeholder="APIキーをセット...">
                 </div>
                 <div class="flex gap-2">
-                    <button @click="exportJSON()" class="bg-white/10 hover:bg-white/20 p-2 rounded text-xs transition" title="JSONとして書き出し">📤</button>
-                    <button @click="$refs.fileInput.click()" class="bg-white/10 hover:bg-white/20 p-2 rounded text-xs transition" title="JSONを読み込む">📥</button>
+                    <button @click="exportJSON()" class="bg-white/10 hover:bg-white/20 p-2.5 rounded shadow transition" title="JSON書き出し">📤</button>
+                    <button @click="$refs.fileInput.click()" class="bg-white/10 hover:bg-white/20 p-2.5 rounded shadow transition" title="JSON読み込み">📥</button>
                     <input type="file" x-ref="fileInput" @change="importJSON($event)" class="hidden" accept=".json">
                 </div>
             </div>
@@ -27,30 +38,25 @@
 
     <main class="container mx-auto mt-6 p-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <aside class="lg:col-span-4 bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-            <div class="p-4 bg-slate-100 border-b flex flex-col gap-3">
+        <aside class="lg:col-span-4 bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 flex flex-col h-[calc(100vh-160px)]">
+            <div class="p-4 bg-slate-100 border-b space-y-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="font-bold uppercase tracking-widest text-sm text-slate-500">Database</h2>
-                    <select x-model="filter" class="text-xs p-1 rounded border">
-                        <option value="all">すべて表示</option>
-                        <option value="basic">主要・基本</option>
-                        <option value="useful">実務・便利</option>
-                        <option value="advanced">高度・マニアック</option>
-                    </select>
+                    <h2 class="font-bold text-xs uppercase text-slate-500">Master Database</h2>
+                    <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold" x-text="dictionary.length + ' 項目'"></span>
                 </div>
-                <input type="text" x-model="searchQuery" placeholder="項目を検索..." class="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" x-model="searchQuery" placeholder="検索..." class="w-full p-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             
-            <div class="h-[700px] overflow-y-auto">
+            <div class="flex-1 overflow-y-auto">
                 <template x-for="item in filteredDictionary" :key="item.id">
                     <div class="group relative border-b border-slate-50">
                         <div @click="selectItem(item)" 
                              class="p-4 hover:bg-blue-50 cursor-pointer transition">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600 group-hover:bg-blue-600 group-hover:text-white" x-text="item.lang"></span>
-                                <span class="text-[10px] text-slate-400" x-text="item.cat"></span>
+                                <span class="text-[10px] text-slate-400 italic" x-text="item.cat"></span>
                             </div>
-                            <div class="font-bold text-slate-700" x-text="item.title"></div>
+                            <div class="font-bold text-slate-700 truncate" x-text="item.title"></div>
                         </div>
                         <button @click.stop="deleteItem(item.id)" class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 transition">
                             🗑️
@@ -61,34 +67,65 @@
         </aside>
 
         <section class="lg:col-span-8 space-y-6">
-            <div class="bg-slate-900 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                <h3 class="text-white font-bold mb-4 flex items-center">
-                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                    AIコード解読 (Model: 2.5-flash)
-                </h3>
-                <textarea x-model="userInput" class="w-full h-40 bg-slate-800 text-green-400 p-4 font-mono text-sm rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="// ここに解析したいコードをペースト..."></textarea>
-                <button @click="analyzeWithAI()" :disabled="isWorking" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-900/40">
-                    <span x-text="isWorking ? 'AI思考中...' : 'AIにコードの意味を尋ねる'"></span>
-                </button>
+            
+            <div class="bg-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden ring-4 ring-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-white font-bold flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+                        Analyze Environment
+                    </h3>
+                    <div class="flex gap-2">
+                        <input type="file" x-ref="codeUpload" @change="handleFileUpload($event)" class="hidden">
+                        <button @click="$refs.codeUpload.click()" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg border border-slate-600 transition">
+                            📁 コードファイルを読み込む
+                        </button>
+                    </div>
+                </div>
+                <textarea x-model="userInput" @input="onCodeInput()" class="w-full h-48 bg-slate-800 text-blue-300 p-4 font-mono text-sm rounded-2xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-400 transition" placeholder="// ここにコードをペースト、またはファイルをアップロード..."></textarea>
+                
+                <div class="mt-4 flex gap-3">
+                    <button @click="analyzeFullCode()" :disabled="isWorking" class="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-4 rounded-2xl transition shadow-lg flex items-center justify-center gap-2">
+                        <span x-show="!isWorking">⚡ AIに全体を解説させる</span>
+                        <span x-show="isWorking" class="flex items-center gap-2 italic">AIが思考を巡らせています...</span>
+                    </button>
+                </div>
             </div>
 
-            <div x-show="displayItem" class="bg-white rounded-2xl p-8 shadow-xl border border-slate-100" x-transition>
-                <div class="flex justify-between items-start border-b pb-4 mb-6">
+            <div x-show="keywords.length > 0" class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200" x-transition>
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">検出された重要キーワード（タップで解説）</h4>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="word in keywords" :key="word">
+                        <button @click="fetchWordDetail(word)" 
+                                class="px-3 py-1.5 rounded-full text-sm font-bold transition flex items-center gap-1 border border-blue-100 hover:scale-105 active:scale-95"
+                                :class="isInDictionary(word) ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-slate-50 text-slate-600 hover:bg-slate-200'">
+                            <span x-text="word"></span>
+                            <span x-show="isInDictionary(word)" class="text-[10px]">📖</span>
+                            <span x-show="!isInDictionary(word)" class="text-[10px]">✨</span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="displayItem" class="bg-white rounded-3xl p-8 shadow-2xl border-t-4 border-blue-500" x-transition>
+                <div class="flex justify-between items-start border-b pb-6 mb-6">
                     <div>
-                        <div class="text-blue-600 font-bold text-sm uppercase mb-1" x-text="displayItem?.lang"></div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-blue-600 font-black text-xs uppercase px-2 py-0.5 bg-blue-50 rounded" x-text="displayItem?.lang"></span>
+                            <span x-show="displayItem?.isAIResult" class="text-xs text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded">AIの回答</span>
+                        </div>
                         <h2 class="text-3xl font-black text-slate-800" x-text="displayItem?.title"></h2>
                     </div>
-                    <button x-show="displayItem?.isAIResult" @click="saveToDatabase()" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-full transition shadow-md flex items-center gap-1">
-                        データベースに追加
+                    <button x-show="displayItem?.isAIResult" @click="saveToDatabase()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black py-3 px-6 rounded-full transition shadow-xl hover:-translate-y-1">
+                        辞書に保存する
                     </button>
                 </div>
                 
-                <div class="bg-slate-50 p-6 rounded-xl mb-6 relative">
-                    <pre class="overflow-x-auto"><code class="text-sm font-mono text-slate-700 leading-relaxed" x-text="displayItem?.code"></code></pre>
+                <div x-show="displayItem?.code" class="bg-slate-900 p-6 rounded-2xl mb-6 shadow-inner">
+                    <pre class="overflow-x-auto"><code class="text-sm font-mono text-blue-300 leading-relaxed" x-text="displayItem?.code"></code></pre>
                 </div>
 
-                <div class="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
-                    <div class="text-slate-700 text-sm leading-loose whitespace-pre-wrap" x-text="displayItem?.explanation"></div>
+                <div class="prose max-w-none">
+                    <div class="text-slate-700 text-base leading-relaxed whitespace-pre-wrap font-medium p-4 bg-slate-50 rounded-2xl border border-slate-100" x-text="displayItem?.explanation"></div>
                 </div>
             </div>
         </section>
@@ -99,12 +136,12 @@
             Alpine.data('lexiconApp', () => ({
                 apiKey: '',
                 userInput: '',
-                filter: 'all',
                 searchQuery: '',
                 displayItem: null,
                 isWorking: false,
                 dictionary: [],
-                // 100件のデータを直接埋め込み！
+                keywords: [],
+                // バックアップ100件データ（完全版）
                 backupData: [
                     { "id": 1, "cat": "basic", "lang": "JavaScript", "title": "テンプレートリテラル", "code": "const name = 'Taro';\nconsole.log(`Hello, ${name}!`);", "explanation": "バッククォートを使うことで、文字列の中に変数を直接埋め込むことができます。可読性が大幅に向上します。" },
                     { "id": 2, "cat": "basic", "lang": "Python", "title": "f-strings (フォーマット済み文字列)", "code": "name = 'Jiro'\nprint(f'Hello, {name}!')", "explanation": "文字列の前にfを付けることで、{}内に変数や計算式を直接記述できる、Pythonで最も推奨される書き方です。" },
@@ -191,7 +228,7 @@
                     { "id": 83, "cat": "advanced", "lang": "Python", "title": "プロパティ (@property)", "code": "@property\ndef age(self): return self._age", "explanation": "メソッドを「変数」のように呼び出せるようにします。値の取得時に計算やチェックを挟みたい時に有効です。" },
                     { "id": 84, "cat": "advanced", "lang": "PHP", "title": "マジックメソッド (__call)", "code": "public function __call($name, $args) { ... }", "explanation": "存在しないメソッドが呼び出された時に発動する特殊なメソッド。柔軟なプラグイン設計などに使われます。" },
                     { "id": 85, "cat": "basic", "lang": "JavaScript", "title": "数値変換 (Number)", "code": "const num = Number('123');", "explanation": "文字列の'123'を計算可能な数値の123に変換します。入力フォームの値は文字列なので変換が必須です。" },
-                    { "id": 86, "cat": "basic", "lang": "Python", "title": "型変換 (int/str)", "code": "s = str(10)\nn = int('20')", "explanation": "数値と文字列を相互に変換します。Pythonは型に厳しいので、明示的な変換が重要になります。" },
+                    { "id": 86, "cat": "basic", "lang": "Python", "title": "型変換 (int/str)", "code": "s = str(10)\ n = int('20')", "explanation": "数値と文字列を相互に変換します。Pythonは型に厳しいので、明示的な変換が重要になります。" },
                     { "id": 87, "cat": "basic", "lang": "PHP", "title": "型キャスト", "code": "$num = (int)'100';", "explanation": "変数の前に(int)と付けるだけで、強制的にその型に変換します。シンプルで使いやすい手法です。" },
                     { "id": 88, "cat": "useful", "lang": "JavaScript", "title": "console.table", "code": "console.table(users);", "explanation": "配列やオブジェクトを、ブラウザのコンソールに「表形式」で綺麗に表示します。デバッグが劇的に楽になります。" },
                     { "id": 89, "cat": "useful", "lang": "Python", "title": "mathモジュール", "code": "import math\nmath.ceil(1.2)", "explanation": "切り上げ(ceil)や四捨五入、円周率などの数学的な計算を行うための標準ライブラリです。" },
@@ -205,23 +242,19 @@
                     { "id": 97, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.includes", "code": "if (arr.includes('apple'))", "explanation": "配列の中に特定の値が含まれているかをtrue/falseで返します。indexOfより読みやすいです。" },
                     { "id": 98, "cat": "useful", "lang": "Python", "title": "datetimeモジュール", "code": "from datetime import datetime\nnow = datetime.now()", "explanation": "現在時刻の取得や、日付の計算を行うための標準ライブラリです。" },
                     { "id": 99, "cat": "useful", "lang": "PHP", "title": "header関数 (リダイレクト)", "code": "header('Location: /login.php');", "explanation": "ブラウザに対して「別のページへ移動せよ」という命令を送ります。ログイン処理後などに多用します。" },
-                    { "id": 100, "cat": "advanced", "lang": "JavaScript", "title": "Generator (ジェネレータ)", "code": "function* myGen() { yield 1; }", "explanation": "処理を途中で一時停止・再開できる特殊な関数です。非同期処理の制御や、無限に続くデータ生成に使われます。" }
+                    { "id": 100, "cat": "advanced", "lang": "JavaScript", "title": "Generator (ジェネレータ)", "code": "function* myGen() { yield 1; }", "explanation": "処理を途中で一時停止・再開できる特殊な関数です。" }
                 ],
 
                 async init() {
                     const savedData = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
-                    // ローカルストレージに保存されているデータ（君が追加したもの）と
-                    // バックアップデータ（この100件）を合体させるよ！
                     this.dictionary = [...savedData, ...this.backupData];
                 },
 
                 get filteredDictionary() {
                     const q = (this.searchQuery || "").toLowerCase();
-                    return this.dictionary.filter(item => {
-                        const matchesFilter = (this.filter === 'all' || item.cat === this.filter);
-                        const matchesSearch = item.title.toLowerCase().includes(q) || item.explanation.toLowerCase().includes(q);
-                        return matchesFilter && matchesSearch;
-                    });
+                    return this.dictionary.filter(item => 
+                        item.title.toLowerCase().includes(q) || item.explanation.toLowerCase().includes(q)
+                    );
                 },
 
                 selectItem(item) {
@@ -229,29 +262,83 @@
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
 
-                async analyzeWithAI() {
-                    if (!this.apiKey) return alert("APIキーを入れてね！");
+                // 📁 ファイルアップロード処理
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.userInput = e.target.result;
+                        this.onCodeInput();
+                    };
+                    reader.readAsText(file);
+                },
+
+                // ✍️ コード入力時に単語を抽出する
+                onCodeInput() {
+                    if (!this.userInput) {
+                        this.keywords = [];
+                        return;
+                    }
+                    // 変数・定数宣言っぽい名前、数値、一般的な予約語を除外する
+                    const reserved = ["const", "let", "var", "function", "def", "if", "else", "for", "while", "return", "class", "async", "await", "import", "export"];
+                    const words = this.userInput.match(/[a-zA-Z_]\w*/g) || [];
+                    const uniqueWords = [...new Set(words)];
+                    
+                    this.keywords = uniqueWords.filter(word => {
+                        return word.length > 3 && !reserved.includes(word.toLowerCase());
+                    }).slice(0, 30); // 表示しすぎないように制限
+                },
+
+                // 📖 辞書に単語があるかチェック
+                isInDictionary(word) {
+                    return this.dictionary.some(i => i.title.toLowerCase().includes(word.toLowerCase()));
+                },
+
+                // 🔍 単語の詳細を取得（辞書 or AI）
+                async fetchWordDetail(word) {
+                    const localItem = this.dictionary.find(i => i.title.toLowerCase().includes(word.toLowerCase()));
+                    if (localItem) {
+                        this.selectItem(localItem);
+                        return;
+                    }
+
+                    // 辞書にない場合はAIに聞く
+                    if (!this.apiKey) return alert("辞書にない単語だからAIに聞きたいんだけど、APIキーが空だよ！");
                     this.isWorking = true;
                     try {
-                        const prompt = `プログラミング辞典の解説員として、以下のコードを詳しく解読してください。\n${this.userInput}`;
-                        // 🟢 君が書き換えてくれた 2.5-flash に固定！
-                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-                        if (!response.ok) throw new Error("APIエラーが発生したよ");
-                        const data = await response.json();
-                        const text = data.candidates[0].content.parts[0].text;
+                        const prompt = `プログラミング用語「${word}」について、初心者向けに100文字程度で分かりやすく解説してください。`;
+                        const res = await this.callGemini(prompt);
                         this.displayItem = {
-                            id: Date.now(), 
-                            cat: "useful",
-                            title: "AI Analysis: " + (this.userInput.substring(0, 15).replace(/\n/g, '') || "New Code"),
+                            id: Date.now(),
+                            cat: "AI補完",
+                            lang: "Terminology",
+                            title: word,
+                            explanation: res,
+                            isAIResult: true
+                        };
+                    } catch (e) {
+                        alert("エラー: " + e.message);
+                    } finally {
+                        this.isWorking = false;
+                    }
+                },
+
+                // ⚡ AIによるコード全体の解説
+                async analyzeFullCode() {
+                    if (!this.apiKey) return alert("APIキーを教えてね！");
+                    this.isWorking = true;
+                    try {
+                        const prompt = `このツールがどのような機能を持っているか、また、コード内の主要なロジックをプログラミング辞典の解説風に教えてください。\n\n${this.userInput}`;
+                        const res = await this.callGemini(prompt);
+                        this.displayItem = {
+                            id: Date.now(),
+                            cat: "Full Analysis",
                             lang: "Auto",
+                            title: "コード全体の解読結果",
                             code: this.userInput,
-                            explanation: text,
-                            isAIResult: true 
+                            explanation: res,
+                            isAIResult: true
                         };
                     } catch (e) {
                         alert("解析失敗: " + e.message);
@@ -260,18 +347,30 @@
                     }
                 },
 
+                async callGemini(prompt) {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!response.ok) throw new Error("API疎通に失敗したよ");
+                    const data = await response.json();
+                    return data.candidates[0].content.parts[0].text;
+                },
+
                 saveToDatabase() {
                     const newItem = { ...this.displayItem, isAIResult: false };
                     this.dictionary.unshift(newItem); 
                     const savedItems = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
                     savedItems.unshift(newItem);
                     localStorage.setItem('myCustomLexicon', JSON.stringify(savedItems));
-                    alert("保存したよ！");
-                    this.displayItem.isAIResult = false; 
+                    alert("マイスペースに保存したよ！");
+                    this.displayItem.isAIResult = false;
                 },
 
                 deleteItem(id) {
-                    if (!confirm("この項目をデータベースから消してもいい？")) return;
+                    if (!confirm("本当に消しちゃう？")) return;
                     this.dictionary = this.dictionary.filter(i => i.id !== id);
                     const savedItems = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
                     const newSavedItems = savedItems.filter(i => i.id !== id);
@@ -280,14 +379,10 @@
                 },
 
                 exportJSON() {
-                    // 全体の辞書ではなく「自分で追加・保存したデータ」だけを書き出すようにすると管理しやすいよ
                     const savedItems = localStorage.getItem('myCustomLexicon') || '[]';
                     const blob = new Blob([savedItems], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'my_lexicon_backup.json';
-                    a.click();
+                    const a = document.createElement('a'); a.href = url; a.download = 'my_lexicon.json'; a.click();
                 },
 
                 importJSON(event) {
@@ -295,14 +390,9 @@
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            localStorage.setItem('myCustomLexicon', JSON.stringify(data));
-                            this.init(); 
-                            alert("データを読み込んだよ！");
-                        } catch (err) {
-                            alert("JSONファイルが壊れているみたい…");
-                        }
+                        const data = JSON.parse(e.target.result);
+                        localStorage.setItem('myCustomLexicon', JSON.stringify(data));
+                        this.init(); alert("データを同期したよ！");
                     };
                     reader.readAsText(file);
                 }
