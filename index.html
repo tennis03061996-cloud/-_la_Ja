@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>CodeLexicon Ultimate - Complete Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900" x-data="lexiconApp">
+
+    <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-5 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-black italic">CODE<span class="text-blue-300">LEXICON</span></h1>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] text-blue-200">Gemini API Key:</span>
+                    <input type="password" x-model="apiKey" class="bg-white/10 border border-white/20 p-1 rounded text-white text-sm focus:bg-white/20 outline-none w-48" placeholder="APIキーを入力...">
+                </div>
+                <div class="flex gap-2">
+                    <button @click="exportJSON()" class="bg-white/10 hover:bg-white/20 p-2 rounded text-xs transition" title="JSONとして書き出し">📤</button>
+                    <button @click="$refs.fileInput.click()" class="bg-white/10 hover:bg-white/20 p-2 rounded text-xs transition" title="JSONを読み込む">📥</button>
+                    <input type="file" x-ref="fileInput" @change="importJSON($event)" class="hidden" accept=".json">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto mt-6 p-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <aside class="lg:col-span-4 bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="p-4 bg-slate-100 border-b flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-bold uppercase tracking-widest text-sm text-slate-500">Database</h2>
+                    <select x-model="filter" class="text-xs p-1 rounded border">
+                        <option value="all">すべて表示</option>
+                        <option value="basic">主要・基本</option>
+                        <option value="useful">実務・便利</option>
+                        <option value="advanced">高度・マニアック</option>
+                    </select>
+                </div>
+                <input type="text" x-model="searchQuery" placeholder="項目を検索..." class="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            
+            <div class="h-[700px] overflow-y-auto">
+                <template x-for="item in filteredDictionary" :key="item.id">
+                    <div class="group relative border-b border-slate-50">
+                        <div @click="selectItem(item)" 
+                             class="p-4 hover:bg-blue-50 cursor-pointer transition">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600 group-hover:bg-blue-600 group-hover:text-white" x-text="item.lang"></span>
+                                <span class="text-[10px] text-slate-400" x-text="item.cat"></span>
+                            </div>
+                            <div class="font-bold text-slate-700" x-text="item.title"></div>
+                        </div>
+                        <button @click.stop="deleteItem(item.id)" class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 transition">
+                            🗑️
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </aside>
+
+        <section class="lg:col-span-8 space-y-6">
+            <div class="bg-slate-900 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                <h3 class="text-white font-bold mb-4 flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                    AIコード解読 (Model: 2.5-flash)
+                </h3>
+                <textarea x-model="userInput" class="w-full h-40 bg-slate-800 text-green-400 p-4 font-mono text-sm rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="// ここに解析したいコードをペースト..."></textarea>
+                <button @click="analyzeWithAI()" :disabled="isWorking" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-900/40">
+                    <span x-text="isWorking ? 'AI思考中...' : 'AIにコードの意味を尋ねる'"></span>
+                </button>
+            </div>
+
+            <div x-show="displayItem" class="bg-white rounded-2xl p-8 shadow-xl border border-slate-100" x-transition>
+                <div class="flex justify-between items-start border-b pb-4 mb-6">
+                    <div>
+                        <div class="text-blue-600 font-bold text-sm uppercase mb-1" x-text="displayItem?.lang"></div>
+                        <h2 class="text-3xl font-black text-slate-800" x-text="displayItem?.title"></h2>
+                    </div>
+                    <button x-show="displayItem?.isAIResult" @click="saveToDatabase()" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-full transition shadow-md flex items-center gap-1">
+                        データベースに追加
+                    </button>
+                </div>
+                
+                <div class="bg-slate-50 p-6 rounded-xl mb-6 relative">
+                    <pre class="overflow-x-auto"><code class="text-sm font-mono text-slate-700 leading-relaxed" x-text="displayItem?.code"></code></pre>
+                </div>
+
+                <div class="bg-blue-50/50 p-6 rounded-xl border border-blue-100">
+                    <div class="text-slate-700 text-sm leading-loose whitespace-pre-wrap" x-text="displayItem?.explanation"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('lexiconApp', () => ({
+                apiKey: '',
+                userInput: '',
+                filter: 'all',
+                searchQuery: '',
+                displayItem: null,
+                isWorking: false,
+                dictionary: [],
+                // 100件のデータを直接埋め込み！
+                backupData: [
+                    { "id": 1, "cat": "basic", "lang": "JavaScript", "title": "テンプレートリテラル", "code": "const name = 'Taro';\nconsole.log(`Hello, ${name}!`);", "explanation": "バッククォートを使うことで、文字列の中に変数を直接埋め込むことができます。可読性が大幅に向上します。" },
+                    { "id": 2, "cat": "basic", "lang": "Python", "title": "f-strings (フォーマット済み文字列)", "code": "name = 'Jiro'\nprint(f'Hello, {name}!')", "explanation": "文字列の前にfを付けることで、{}内に変数や計算式を直接記述できる、Pythonで最も推奨される書き方です。" },
+                    { "id": 3, "cat": "basic", "lang": "PHP", "title": "アロー関数 (fn)", "code": "$add = fn($a, $b) => $a + $b;\necho $add(1, 2);", "explanation": "PHP 7.4から導入された短い関数記法。親スコープの変数を自動で引き継ぐため、callback関数に最適です。" },
+                    { "id": 4, "cat": "useful", "lang": "JavaScript", "title": "オブジェクトの分割代入", "code": "const user = { name: 'Alice', age: 25 };\nconst { name, age } = user;", "explanation": "オブジェクトの中身を、同じ名前の変数として一気に取り出す手法です。Reactなどのモダンな開発で多用されます。" },
+                    { "id": 5, "cat": "useful", "lang": "Python", "title": "リスト内包表記", "code": "nums = [x * 2 for x in range(5)]", "explanation": "既存のリストから新しいリストを1行で生成します。for文を回してappendするより高速で簡潔です。" },
+                    { "id": 6, "cat": "useful", "lang": "PHP", "title": "Null合体代入演算子", "code": "$config['theme'] ??= 'default';", "explanation": "もし左辺がnullか未定義の場合にのみ、右辺の値を代入します。設定のデフォルト値指定に便利です。" },
+                    { "id": 7, "cat": "advanced", "lang": "JavaScript", "title": "Async/Await (非同期処理)", "code": "async function fetchData() {\n  const res = await fetch(url);\n  const data = await res.json();\n}", "explanation": "複雑になりがちな非同期処理を、まるで同期処理（上から下へ流れる処理）のように書ける高度な構文です。" },
+                    { "id": 8, "cat": "advanced", "lang": "Python", "title": "デコレータ", "code": "def log(func):\n    def wrapper():\n        print('Start')\n        func()\n    return wrapper", "explanation": "関数を書き換えずに、その前後に共通の処理（ログ出力や認証など）を追加するための高度なテクニックです。" },
+                    { "id": 9, "cat": "advanced", "lang": "PHP", "title": "トレイト (Traits)", "code": "trait Logger { public function log($m) { echo $m; } }\nclass User { use Logger; }", "explanation": "多重継承ができないPHPで、複数のクラス間でメソッドを再利用するための仕組みです。" },
+                    { "id": 10, "cat": "basic", "lang": "JavaScript", "title": "for...of ループ", "code": "for (const item of array) {\n  console.log(item);\n}", "explanation": "配列の要素を一つずつ取り出す最もシンプルな方法です。インデックス管理が不要でバグを防げます。" },
+                    { "id": 11, "cat": "basic", "lang": "Python", "title": "例外処理 (try...except)", "code": "try:\n    res = 10 / 0\nexcept ZeroDivisionError:\n    print('Error!')", "explanation": "エラーが起きそうな場所を囲み、プログラムが強制終了するのを防ぎます。安全なアプリ作りには不可欠です。" },
+                    { "id": 12, "cat": "basic", "lang": "PHP", "title": "Match式", "code": "$res = match($status) {\n  200 => 'OK',\n  404 => 'Not Found',\n  default => 'Unknown',\n};", "explanation": "PHP 8で導入。switch文より厳密で、結果を変数に直接代入できる洗練された分岐構文です。" },
+                    { "id": 13, "cat": "useful", "lang": "JavaScript", "title": "スプレッド演算子", "code": "const newArr = [...oldArr, 4, 5];\nconst newObj = { ...oldObj, id: 1 };", "explanation": "配列やオブジェクトを「展開」します。元のデータを壊さずに新しいコピーを作る際によく使われます。" },
+                    { "id": 14, "cat": "useful", "lang": "Python", "title": "zip関数", "code": "for n, a in zip(names, ages):\n    print(f'{n}は{a}歳')", "explanation": "2つの異なるリスト（名前リストと年齢リストなど）を同時にループで回すことができる便利な関数です。" },
+                    { "id": 15, "cat": "useful", "lang": "PHP", "title": "array_column", "code": "$names = array_column($users, 'name');", "explanation": "多次元配列から、特定のキーの値だけを抜き出して1次元配列にする、データ加工の鉄板関数です。" },
+                    { "id": 16, "cat": "advanced", "lang": "JavaScript", "title": "カリー化 (Currying)", "code": "const multiply = a => b => a * b;\nconst double = multiply(2);\nconsole.log(double(5)); // 10", "explanation": "複数の引数を取る関数を、1つずつ引数を取る関数の連鎖に分割する技法。関数の再利用性を高めます。" },
+                    { "id": 17, "cat": "advanced", "lang": "Python", "title": "コンテキストマネージャ (with)", "code": "with open('file.txt', 'r') as f:\n    data = f.read()", "explanation": "ファイルのクローズなどの「後片付け」を自動で行う仕組み。リソース漏れを防ぐ高度な管理手法です。" },
+                    { "id": 18, "cat": "advanced", "lang": "PHP", "title": "ジェネレータ (yield)", "code": "function getNums() {\n  yield 1; yield 2; yield 3;\n}", "explanation": "大量のデータを一度にメモリに載せず、必要な分だけ1つずつ生成して返す、メモリ節約のための高度な仕組みです。" },
+                    { "id": 19, "cat": "basic", "lang": "JavaScript", "title": "Mapオブジェクト", "code": "const map = new Map();\nmap.set('id', 123);", "explanation": "通常のオブジェクトより高機能な連想配列。キーにオブジェクト自体を使えたり、要素数を簡単に取得できたりします。" },
+                    { "id": 20, "cat": "basic", "lang": "Python", "title": "スライス表記", "code": "sub = my_list[1:4]\nreversed = my_list[::-1]", "explanation": "リストの一部を切り出したり、逆順にしたりする強力な記法。Pythonらしいコードの代表格です。" },
+                    { "id": 21, "cat": "useful", "lang": "PHP", "title": "filter_var (バリデーション)", "code": "if (filter_var($email, FILTER_VALIDATE_EMAIL)) {\n  // 有効なメール形式\n}", "explanation": "メールアドレスやURLが正しい形式かどうかを一瞬で判定する、セキュリティ上非常に重要な関数です。" },
+                    { "id": 22, "cat": "useful", "lang": "JavaScript", "title": "オプショナルチェイニング", "code": "const city = user?.address?.city;", "explanation": "途中のデータがnullやundefinedでもエラーにならず、安全にプロパティにアクセスできる比較の新い便利な書き方です。" },
+                    { "id": 23, "cat": "useful", "lang": "Python", "title": "Counter (要素の数え上げ)", "code": "from collections import Counter\nc = Counter(['a', 'b', 'a'])", "explanation": "リストの中にどの要素が何個あるかを自動で集計するクラス。分析業務などで非常に役立ちます。" },
+                    { "id": 24, "cat": "advanced", "lang": "PHP", "title": "名前付き引数", "code": "saveUser(name: 'Taro', age: 20, admin: true);", "explanation": "PHP 8から導入。引数の順番を気にせず、名前を指定して値を渡せます。関数の意味が明確になります。" },
+                    { "id": 25, "cat": "advanced", "lang": "JavaScript", "title": "Proxy (プロキシ)", "code": "const p = new Proxy(target, {\n  get: (obj, prop) => { console.log('Access!'); return obj[prop]; }\n});", "explanation": "オブジェクトへのアクセスを横取りして独自の処理を挟む技術。Vue.jsの裏側などでリアクティブな動きを作るのに使われます。" },
+                    { "id": 26, "cat": "advanced", "lang": "Python", "title": "メタクラス", "code": "class MyMeta(type):\n    pass\nclass MyClass(metaclass=MyMeta):", "explanation": "「クラスそのもの」を作るためのクラス。フレームワークを作成するような非常に高度なメタプログラミングで使われます。" },
+                    { "id": 27, "cat": "basic", "lang": "PHP", "title": "型宣言 (Type Hinting)", "code": "function add(int $a, int $b): int {\n  return $a + $b;\n}", "explanation": "引数や戻り値に型を指定することで、意図しないデータが入るのを防ぎ、バグを早期発見します。" },
+                    { "id": 28, "cat": "useful", "lang": "JavaScript", "title": "Promise.all", "code": "const results = await Promise.all([task1, task2]);", "explanation": "複数の非同期処理を同時に実行し、すべてが終わるまで待つ方法。通信時間を大幅に短縮できます。" },
+                    { "id": 29, "cat": "useful", "lang": "Python", "title": "any / all 関数", "code": "if any([True, False, False]):\n    print('一つでも真！')", "explanation": "リストの中に一つでも真があるか(any)、すべて真か(all)を判定します。複雑な条件式を簡潔にします。" },
+                    { "id": 30, "cat": "useful", "lang": "PHP", "title": "str_contains", "code": "if (str_contains($text, 'apple')) { ... }", "explanation": "文字列の中に特定の文字が含まれているかを判定します。以前のstrposより直感的で読みやすい関数です。" },
+                    { "id": 31, "cat": "basic", "lang": "JavaScript", "title": "論理積演算子 (&&) の活用", "code": "isLoggedIn && showDashboard();", "explanation": "左側が真のときだけ右側を実行します。if文を短く書く手法としてモダンな開発でよく使われます。" },
+                    { "id": 32, "cat": "basic", "lang": "Python", "title": "多重代入", "code": "a, b = 10, 20", "explanation": "複数の変数に一度に値を代入できます。2つの変数の値を入れ替える(a, b = b, a)のも1行で可能です。" },
+                    { "id": 33, "cat": "basic", "lang": "PHP", "title": "定数の定義 (const)", "code": "const TAX_RATE = 0.1;", "explanation": "プログラム全体で変わらない値を定義します。define()よりもクラス内などで使いやすく高速です。" },
+                    { "id": 34, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.map", "code": "const doubled = arr.map(x => x * 2);", "explanation": "元の配列を加工して、新しい配列を作ります。元のデータを壊さない（イミュータブル）開発に必須です。" },
+                    { "id": 35, "cat": "useful", "lang": "Python", "title": "辞書の get() メソッド", "code": "value = my_dict.get('key', 'default')", "explanation": "存在しないキーを指定してもエラーにならず、指定したデフォルト値を返してくれる安全な取得方法です。" },
+                    { "id": 36, "cat": "useful", "lang": "PHP", "title": "explode関数", "code": "$arr = explode(',', 'a,b,c');", "explanation": "文字列を特定の文字（コンマなど）で区切って配列に変換します。CSVデータの処理などに便利です。" },
+                    { "id": 37, "cat": "advanced", "lang": "JavaScript", "title": "モジュール分割 (import/export)", "code": "export const myFunc = () => {};\nimport { myFunc } from './file.js';", "explanation": "大きなプログラムを複数のファイルに分けて管理する仕組みです。コードの再利用性が高まります。" },
+                    { "id": 38, "cat": "advanced", "lang": "Python", "title": "ジェネレータ式", "code": "gen = (x**2 for x in range(10000))", "explanation": "リスト内包表記と似ていますが、値をその都度生成するためメモリを消費しません。巨大なデータ処理に向いています。" },
+                    { "id": 39, "cat": "advanced", "lang": "PHP", "title": "無名クラス", "code": "$app->setLogger(new class { public function log($m) { echo $m; } });", "explanation": "一度しか使わないような小さなクラスを、名前を付けずにその場で定義して使い捨てる手法です。" },
+                    { "id": 40, "cat": "basic", "lang": "JavaScript", "title": "デフォルト引数", "code": "function greet(name = 'Guest') { ... }", "explanation": "引数が渡されなかった場合の初期値を設定できます。undefinedによるエラーを防げます。" },
+                    { "id": 41, "cat": "basic", "lang": "Python", "title": "論理演算子 (and, or, not)", "code": "if x > 0 and not is_error:", "explanation": "記号（&&など）ではなく単語を使うのがPythonの特徴です。英語に近い感覚で条件式が読めます。" },
+                    { "id": 42, "cat": "basic", "lang": "PHP", "title": "ヒアドキュメント", "code": "$html = <<<EOD\n<div>$content</div>\nEOD;", "explanation": "複数行にわたる長い文字列を、クォートを使わずにそのまま記述できる便利な書き方です。" },
+                    { "id": 43, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.filter", "code": "const adults = users.filter(u => u.age >= 18);", "explanation": "条件に合う要素だけを抽出して新しい配列を作ります。データの絞り込みに多用されます。" },
+                    { "id": 44, "cat": "useful", "lang": "Python", "title": "sorted()関数のkey指定", "code": "sorted(users, key=lambda x: x['age'])", "explanation": "リストを並び替える際、「年齢順」などの複雑な条件を自由に指定してソートできます。" },
+                    { "id": 45, "cat": "useful", "lang": "PHP", "title": "implode関数", "code": "$str = implode('-', ['2026', '03', '01']);", "explanation": "配列の要素を指定した文字で連結して一つの文字列にします。explodeの逆の操作です。" },
+                    { "id": 46, "cat": "advanced", "lang": "JavaScript", "title": "オブジェクトの凍結 (Object.freeze)", "code": "Object.freeze(config);", "explanation": "オブジェクトの内容を絶対に書き換えられないようにロックします。定数管理の安全性を高めます。" },
+                    { "id": 47, "cat": "advanced", "lang": "Python", "title": "argsとkwargs", "code": "def func(*args, **kwargs):", "explanation": "引数の数が決まっていない関数を定義します。他の関数を包む（ラップする）際に非常に強力です。" },
+                    { "id": 48, "cat": "advanced", "lang": "PHP", "title": "コンストラクタのプロパティ昇格", "code": "public function __construct(public string $name) {}", "explanation": "PHP 8の新機能。コンストラクタの引数にアクセス修飾子を付けるだけで、自動でプロパティとして定義されます。" },
+                    { "id": 49, "cat": "basic", "lang": "JavaScript", "title": "論理和演算子 (||) によるデフォルト代入", "code": "const name = inputName || 'Anonymous';", "explanation": "左側が空（false）の場合に右側の値を採用します。簡易的な初期値設定によく使われます。" },
+                    { "id": 50, "cat": "basic", "lang": "Python", "title": "range()関数", "code": "for i in range(5):", "explanation": "0から4までの連番を作成します。特定の回数だけループを回したい時の定番です。" },
+                    { "id": 51, "cat": "basic", "lang": "PHP", "title": "論理型 (boolean)", "code": "$isActive = true;", "explanation": "真(true)か偽(false)かを表します。PHPでは大文字小文字を区別しませんが、小文字が一般的です。" },
+                    { "id": 52, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.find", "code": "const user = users.find(u => u.id === 1);", "explanation": "条件に一致する「最初の一つ」だけを取り出します。IDでデータを検索する際に最適です。" },
+                    { "id": 53, "cat": "useful", "lang": "Python", "title": "セット (Set) の積集合", "code": "common = set1 & set2", "explanation": "2つのリストの共通要素だけを高速に取り出します。重複排除だけでなく比較にも便利です。" },
+                    { "id": 54, "cat": "useful", "lang": "PHP", "title": "json_encode", "code": "echo json_encode($data);", "explanation": "PHPの配列をJSON形式の文字列に変換します。APIのレスポンス作成に欠かせません。" },
+                    { "id": 55, "cat": "advanced", "lang": "JavaScript", "title": "再帰関数", "code": "function factor(n) { return n === 1 ? 1 : n * factor(n-1); }", "explanation": "自分自身を呼び出す関数です。フォルダ構造の探索や複雑な計算アルゴリズムで使われます。" },
+                    { "id": 56, "cat": "advanced", "lang": "Python", "title": "ラムダ式 (lambda)", "code": "f = lambda x, y: x + y", "explanation": "名前のない「1行だけの関数」を作ります。ソートの条件指定や高階関数でよく使われます。" },
+                    { "id": 57, "cat": "advanced", "lang": "PHP", "title": "nullsafe演算子", "code": "$city = $user?->getAddress()?->city;", "explanation": "途中でnullが返ってきてもエラーにならずにnullを返します。長いチェインでも安全に記述できます。" },
+                    { "id": 58, "cat": "basic", "lang": "JavaScript", "title": "typeof演算子", "code": "if (typeof val === 'string')", "explanation": "変数のデータの種類（文字列、数値など）を判定します。動的な言語で安全に処理を行うために重要です。" },
+                    { "id": 59, "cat": "basic", "lang": "Python", "title": "Noneの判定", "code": "if val is None:", "explanation": "値が「空」であることを判定します。== ではなく is を使うのがPythonの作法です。" },
+                    { "id": 60, "cat": "basic", "lang": "PHP", "title": "比較演算子 (===)", "code": "if ($a === $b)", "explanation": "値だけでなく「型」も同じかどうかを厳密に比較します。バグを防ぐため、常にこちらを使うのが推奨されます。" },
+                    { "id": 61, "cat": "useful", "lang": "JavaScript", "title": "Object.keys", "code": "const keys = Object.keys(user);", "explanation": "オブジェクトが持っている全ての「キー名」を配列として取り出します。ループ処理で役立ちます。" },
+                    { "id": 62, "cat": "useful", "lang": "Python", "title": "文字列の join()", "code": "'-'.join(['a', 'b', 'c'])", "explanation": "リストの要素を特定の文字でつなぎます。PHPのimplodeと同じ役割ですが、書き方が独特です。" },
+                    { "id": 63, "cat": "useful", "lang": "PHP", "title": "str_replace", "code": "str_replace('old', 'new', $text);", "explanation": "文字列の中の特定の単語を、別の単語に置換します。テンプレートの穴埋めなどに便利です。" },
+                    { "id": 64, "cat": "advanced", "lang": "JavaScript", "title": "クロージャによるプライベート変数", "code": "function counter() { let c = 0; return () => ++c; }", "explanation": "外部から直接書き換えられない「隠された変数」を持つ関数を作ります。安全な状態管理が可能です。" },
+                    { "id": 65, "cat": "advanced", "lang": "Python", "title": "抽象基底クラス (ABC)", "code": "from abc import ABC, abstractmethod", "explanation": "「継承先で必ずこのメソッドを実装せよ」というルールを作ります。大規模開発の設計図として使います。" },
+                    { "id": 66, "cat": "advanced", "lang": "PHP", "title": "名前付き引数", "code": "func(name: 'Taro', age: 20);", "explanation": "引数の順番を無視して、名前で指定して値を渡せます。引数が多い関数の可読性が劇的に上がります。" },
+                    { "id": 67, "cat": "basic", "lang": "JavaScript", "title": "テンプレートリテラル内の計算", "code": "`${a + b}円です`", "explanation": "文字列の中の${}には、変数だけでなく足し算などの計算式も直接書くことができます。" },
+                    { "id": 68, "cat": "basic", "lang": "Python", "title": "in演算子", "code": "if 'apple' in my_list:", "explanation": "リストや文字列の中に、指定したものが含まれているかを直感的に調べることができます。" },
+                    { "id": 69, "cat": "basic", "lang": "PHP", "title": "三項演算子", "code": "$res = ($score > 80) ? 'A' : 'B';", "explanation": "if-else文を1行に凝縮して書く方法です。単純な代入を短く保つのに有効です。" },
+                    { "id": 70, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.reduce", "code": "const sum = arr.reduce((acc, cur) => acc + cur, 0);", "explanation": "配列の値を一つにまとめます（合計値など）。使いこなすと非常に強力な高階関数です。" },
+                    { "id": 71, "cat": "useful", "lang": "Python", "title": "enumerate()", "code": "for i, val in enumerate(mylist):", "explanation": "ループで「現在のインデックス番号」と「値」を同時に取得できます。手動でカウントする手間が省けます。" },
+                    { "id": 72, "cat": "useful", "lang": "PHP", "title": "array_merge", "code": "$new = array_merge($a, $b);", "explanation": "複数の配列を一つに合体させます。設定データやリストの統合に頻繁に使われます。" },
+                    { "id": 73, "cat": "advanced", "lang": "JavaScript", "title": "シンボル (Symbol)", "code": "const id = Symbol('id');", "explanation": "絶対に他と重複しないユニークな値を生成します。オブジェクトの隠しキーなど特殊な用途に使います。" },
+                    { "id": 74, "cat": "advanced", "lang": "Python", "title": "静的メソッド (@staticmethod)", "code": "@staticmethod\ndef info(): ...", "explanation": "クラスのインスタンスを作らなくても呼び出せるメソッド。関連する機能をまとめるのに適しています。" },
+                    { "id": 75, "cat": "advanced", "lang": "PHP", "title": "例外のキャッチ (try-catch)", "code": "try { ... } catch (Exception $e) { ... }", "explanation": "エラーが発生した際にプログラムを止めず、独自の処理（ログ出力や復旧）を行うための仕組みです。" },
+                    { "id": 76, "cat": "basic", "lang": "JavaScript", "title": "配列の長さ (length)", "code": "arr.length", "explanation": "配列の中にいくつ要素が入っているかを返します。ループの条件式などで最も使われるプロパティです。" },
+                    { "id": 77, "cat": "basic", "lang": "Python", "title": "len()関数", "code": "length = len(my_list)", "explanation": "リストや文字列の長さを取得します。JavaScriptと違い、プロパティではなく関数なのが特徴です。" },
+                    { "id": 78, "cat": "basic", "lang": "PHP", "title": "count関数", "code": "$num = count($arr);", "explanation": "配列の要素数を数えます。Python同様、関数として提供されています。" },
+                    { "id": 79, "cat": "useful", "lang": "JavaScript", "title": "localStorage", "code": "localStorage.setItem('key', 'val');", "explanation": "ブラウザを閉じてもデータが消えない、簡易的な保存領域です。ユーザー設定の保存などに使います。" },
+                    { "id": 80, "cat": "useful", "lang": "Python", "title": "jsonモジュール", "code": "import json\ndata = json.loads(json_str)", "explanation": "JSON文字列をPythonの辞書形式に変換します。Web API連携の基本となる処理です。" },
+                    { "id": 81, "cat": "useful", "lang": "PHP", "title": "str_starts_with", "code": "str_starts_with($text, 'http');", "explanation": "文字列が指定した文字で始まっているかを判定します。PHP 8で追加された便利な関数です。" },
+                    { "id": 82, "cat": "advanced", "lang": "JavaScript", "title": "分割代入のデフォルト値", "code": "const { name = 'Anonymous' } = user;", "explanation": "オブジェクトから値を取り出す際、もしそのキーが存在しなかった場合の初期値を同時に指定できます。" },
+                    { "id": 83, "cat": "advanced", "lang": "Python", "title": "プロパティ (@property)", "code": "@property\ndef age(self): return self._age", "explanation": "メソッドを「変数」のように呼び出せるようにします。値の取得時に計算やチェックを挟みたい時に有効です。" },
+                    { "id": 84, "cat": "advanced", "lang": "PHP", "title": "マジックメソッド (__call)", "code": "public function __call($name, $args) { ... }", "explanation": "存在しないメソッドが呼び出された時に発動する特殊なメソッド。柔軟なプラグイン設計などに使われます。" },
+                    { "id": 85, "cat": "basic", "lang": "JavaScript", "title": "数値変換 (Number)", "code": "const num = Number('123');", "explanation": "文字列の'123'を計算可能な数値の123に変換します。入力フォームの値は文字列なので変換が必須です。" },
+                    { "id": 86, "cat": "basic", "lang": "Python", "title": "型変換 (int/str)", "code": "s = str(10)\nn = int('20')", "explanation": "数値と文字列を相互に変換します。Pythonは型に厳しいので、明示的な変換が重要になります。" },
+                    { "id": 87, "cat": "basic", "lang": "PHP", "title": "型キャスト", "code": "$num = (int)'100';", "explanation": "変数の前に(int)と付けるだけで、強制的にその型に変換します。シンプルで使いやすい手法です。" },
+                    { "id": 88, "cat": "useful", "lang": "JavaScript", "title": "console.table", "code": "console.table(users);", "explanation": "配列やオブジェクトを、ブラウザのコンソールに「表形式」で綺麗に表示します。デバッグが劇的に楽になります。" },
+                    { "id": 89, "cat": "useful", "lang": "Python", "title": "mathモジュール", "code": "import math\nmath.ceil(1.2)", "explanation": "切り上げ(ceil)や四捨五入、円周率などの数学的な計算を行うための標準ライブラリです。" },
+                    { "id": 90, "cat": "useful", "lang": "PHP", "title": "password_hash", "code": "password_hash('password', PASSWORD_DEFAULT);", "explanation": "パスワードを安全に暗号化（ハッシュ化）します。セキュリティ上、生のパスワード保存はNGです。" },
+                    { "id": 91, "cat": "advanced", "lang": "JavaScript", "title": "タグ付きテンプレート", "code": "myTag`Hello ${name}`;", "explanation": "テンプレートリテラルを関数に渡し、特別な加工をしてから文字列にする高度な技術です。CSS-in-JSなどで使われます。" },
+                    { "id": 92, "cat": "advanced", "lang": "Python", "title": "super()関数", "code": "super().__init__()", "explanation": "継承元の親クラスのメソッドを呼び出します。親の機能を活かしつつ、新しい機能を追加する際に必須です。" },
+                    { "id": 93, "cat": "advanced", "lang": "PHP", "title": "インターフェース (interface)", "code": "interface Shape { public function draw(); }", "explanation": "「このクラスは絶対にこのメソッドを持つ」という契約を結びます。多人数開発での一貫性を保ちます。" },
+                    { "id": 94, "cat": "basic", "lang": "JavaScript", "title": "厳密等価演算子 (!==)", "code": "if (a !== b)", "explanation": "「型まで含めて等しくない」ことを判定します。!= よりもこちらを使うのが常に安全です。" },
+                    { "id": 95, "cat": "basic", "lang": "Python", "title": "コメントの書き方 (#)", "code": "# ここにメモを書く", "explanation": "プログラムの実行に関係ないメモを残します。複数行はクォート3つで囲む慣習があります。" },
+                    { "id": 96, "cat": "basic", "lang": "PHP", "title": "変数の定義 ($)", "code": "$name = 'Taro';", "explanation": "PHPの変数は必ず $ 記号から始まります。英数字とアンダースコアが使用可能です。" },
+                    { "id": 97, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.includes", "code": "if (arr.includes('apple'))", "explanation": "配列の中に特定の値が含まれているかをtrue/falseで返します。indexOfより読みやすいです。" },
+                    { "id": 98, "cat": "useful", "lang": "Python", "title": "datetimeモジュール", "code": "from datetime import datetime\nnow = datetime.now()", "explanation": "現在時刻の取得や、日付の計算を行うための標準ライブラリです。" },
+                    { "id": 99, "cat": "useful", "lang": "PHP", "title": "header関数 (リダイレクト)", "code": "header('Location: /login.php');", "explanation": "ブラウザに対して「別のページへ移動せよ」という命令を送ります。ログイン処理後などに多用します。" },
+                    { "id": 100, "cat": "advanced", "lang": "JavaScript", "title": "Generator (ジェネレータ)", "code": "function* myGen() { yield 1; }", "explanation": "処理を途中で一時停止・再開できる特殊な関数です。非同期処理の制御や、無限に続くデータ生成に使われます。" }
+                ],
+
+                async init() {
+                    const savedData = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
+                    // ローカルストレージに保存されているデータ（君が追加したもの）と
+                    // バックアップデータ（この100件）を合体させるよ！
+                    this.dictionary = [...savedData, ...this.backupData];
+                },
+
+                get filteredDictionary() {
+                    const q = (this.searchQuery || "").toLowerCase();
+                    return this.dictionary.filter(item => {
+                        const matchesFilter = (this.filter === 'all' || item.cat === this.filter);
+                        const matchesSearch = item.title.toLowerCase().includes(q) || item.explanation.toLowerCase().includes(q);
+                        return matchesFilter && matchesSearch;
+                    });
+                },
+
+                selectItem(item) {
+                    this.displayItem = { ...item, isAIResult: false };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                async analyzeWithAI() {
+                    if (!this.apiKey) return alert("APIキーを入れてね！");
+                    this.isWorking = true;
+                    try {
+                        const prompt = `プログラミング辞典の解説員として、以下のコードを詳しく解読してください。\n${this.userInput}`;
+                        // 🟢 君が書き換えてくれた 2.5-flash に固定！
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+                        if (!response.ok) throw new Error("APIエラーが発生したよ");
+                        const data = await response.json();
+                        const text = data.candidates[0].content.parts[0].text;
+                        this.displayItem = {
+                            id: Date.now(), 
+                            cat: "useful",
+                            title: "AI Analysis: " + (this.userInput.substring(0, 15).replace(/\n/g, '') || "New Code"),
+                            lang: "Auto",
+                            code: this.userInput,
+                            explanation: text,
+                            isAIResult: true 
+                        };
+                    } catch (e) {
+                        alert("解析失敗: " + e.message);
+                    } finally {
+                        this.isWorking = false;
+                    }
+                },
+
+                saveToDatabase() {
+                    const newItem = { ...this.displayItem, isAIResult: false };
+                    this.dictionary.unshift(newItem); 
+                    const savedItems = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
+                    savedItems.unshift(newItem);
+                    localStorage.setItem('myCustomLexicon', JSON.stringify(savedItems));
+                    alert("保存したよ！");
+                    this.displayItem.isAIResult = false; 
+                },
+
+                deleteItem(id) {
+                    if (!confirm("この項目をデータベースから消してもいい？")) return;
+                    this.dictionary = this.dictionary.filter(i => i.id !== id);
+                    const savedItems = JSON.parse(localStorage.getItem('myCustomLexicon') || '[]');
+                    const newSavedItems = savedItems.filter(i => i.id !== id);
+                    localStorage.setItem('myCustomLexicon', JSON.stringify(newSavedItems));
+                    if (this.displayItem?.id === id) this.displayItem = null;
+                },
+
+                exportJSON() {
+                    // 全体の辞書ではなく「自分で追加・保存したデータ」だけを書き出すようにすると管理しやすいよ
+                    const savedItems = localStorage.getItem('myCustomLexicon') || '[]';
+                    const blob = new Blob([savedItems], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'my_lexicon_backup.json';
+                    a.click();
+                },
+
+                importJSON(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            localStorage.setItem('myCustomLexicon', JSON.stringify(data));
+                            this.init(); 
+                            alert("データを読み込んだよ！");
+                        } catch (err) {
+                            alert("JSONファイルが壊れているみたい…");
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
