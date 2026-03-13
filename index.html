@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeLexicon - Pro Max</title>
     
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='60' fill='%2360a5fa'>&lt;/&gt;</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='60' fill='%2360a5fa'>&lt;/&gt;</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMWUyOTNiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1zaXplPSI2MCIgZmlsbD0iIzYwYTVmYSI+Jmx0Oy8mZ3Q7PC90ZXh0Pjwvc3ZnPg==">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMWUyOTNiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1zaXplPSI2MCIgZmlsbD0iIzYwYTVmYSI+Jmx0Oy8mZ3Q7PC90ZXh0Pjwvc3ZnPg==">
+    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -24,7 +25,7 @@
             
             <div class="flex items-center gap-4 flex-1 justify-end min-w-[300px]">
                 <div class="flex flex-col items-end">
-                    <span class="text-[10px] text-blue-200">Gemini 2.5 API Key:</span>
+                    <span class="text-[10px] text-blue-200">Gemini 2.0 API Key:</span>
                     <input type="password" x-model="apiKey" class="bg-white/10 border border-white/20 p-2 rounded text-white text-xs focus:bg-white/20 outline-none w-full max-w-[200px]" placeholder="APIキーをセット...">
                 </div>
                 <div class="flex gap-2">
@@ -141,7 +142,7 @@
                 isWorking: false,
                 dictionary: [],
                 keywords: [],
-                // バックアップ100件データ（完全版）
+                // バックアップ100件データ
                 backupData: [
                     { "id": 1, "cat": "basic", "lang": "JavaScript", "title": "テンプレートリテラル", "code": "const name = 'Taro';\nconsole.log(`Hello, ${name}!`);", "explanation": "バッククォートを使うことで、文字列の中に変数を直接埋め込むことができます。可読性が大幅に向上します。" },
                     { "id": 2, "cat": "basic", "lang": "Python", "title": "f-strings (フォーマット済み文字列)", "code": "name = 'Jiro'\nprint(f'Hello, {name}!')", "explanation": "文字列の前にfを付けることで、{}内に変数や計算式を直接記述できる、Pythonで最も推奨される書き方です。" },
@@ -176,7 +177,7 @@
                     { "id": 31, "cat": "basic", "lang": "JavaScript", "title": "論理積演算子 (&&) の活用", "code": "isLoggedIn && showDashboard();", "explanation": "左側が真のときだけ右側を実行します。if文を短く書く手法としてモダンな開発でよく使われます。" },
                     { "id": 32, "cat": "basic", "lang": "Python", "title": "多重代入", "code": "a, b = 10, 20", "explanation": "複数の変数に一度に値を代入できます。2つの変数の値を入れ替える(a, b = b, a)のも1行で可能です。" },
                     { "id": 33, "cat": "basic", "lang": "PHP", "title": "定数の定義 (const)", "code": "const TAX_RATE = 0.1;", "explanation": "プログラム全体で変わらない値を定義します。define()よりもクラス内などで使いやすく高速です。" },
-                    { "id": 34, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.map", "code": "const doubled = arr.map(x => x * 2);", "explanation": "元の配列を加工して、新しい配列を作ります。元のデータを壊さない（イミュータブル）開発に必須です。" },
+                    { "id": 34, "cat": "useful", "lang": "JavaScript", "title": "Array.prototype.map", "code": "const doubled = arr.map(x => x * 2);", "explanation": "元の配列を加工して、新しい配列を作ります。元のデータを壊ささない（イミュータブル）開発に必須です。" },
                     { "id": 35, "cat": "useful", "lang": "Python", "title": "辞書の get() メソッド", "code": "value = my_dict.get('key', 'default')", "explanation": "存在しないキーを指定してもエラーにならず、指定したデフォルト値を返してくれる安全な取得方法です。" },
                     { "id": 36, "cat": "useful", "lang": "PHP", "title": "explode関数", "code": "$arr = explode(',', 'a,b,c');", "explanation": "文字列を特定の文字（コンマなど）で区切って配列に変換します。CSVデータの処理などに便利です。" },
                     { "id": 37, "cat": "advanced", "lang": "JavaScript", "title": "モジュール分割 (import/export)", "code": "export const myFunc = () => {};\nimport { myFunc } from './file.js';", "explanation": "大きなプログラムを複数のファイルに分けて管理する仕組みです。コードの再利用性が高まります。" },
@@ -262,7 +263,6 @@
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
 
-                // 📁 ファイルアップロード処理
                 handleFileUpload(event) {
                     const file = event.target.files[0];
                     if (!file) return;
@@ -274,28 +274,24 @@
                     reader.readAsText(file);
                 },
 
-                // ✍️ コード入力時に単語を抽出する
                 onCodeInput() {
                     if (!this.userInput) {
                         this.keywords = [];
                         return;
                     }
-                    // 変数・定数宣言っぽい名前、数値、一般的な予約語を除外する
                     const reserved = ["const", "let", "var", "function", "def", "if", "else", "for", "while", "return", "class", "async", "await", "import", "export"];
                     const words = this.userInput.match(/[a-zA-Z_]\w*/g) || [];
                     const uniqueWords = [...new Set(words)];
                     
                     this.keywords = uniqueWords.filter(word => {
                         return word.length > 3 && !reserved.includes(word.toLowerCase());
-                    }).slice(0, 30); // 表示しすぎないように制限
+                    }).slice(0, 30);
                 },
 
-                // 📖 辞書に単語があるかチェック
                 isInDictionary(word) {
                     return this.dictionary.some(i => i.title.toLowerCase().includes(word.toLowerCase()));
                 },
 
-                // 🔍 単語の詳細を取得（辞書 or AI）
                 async fetchWordDetail(word) {
                     const localItem = this.dictionary.find(i => i.title.toLowerCase().includes(word.toLowerCase()));
                     if (localItem) {
@@ -303,8 +299,7 @@
                         return;
                     }
 
-                    // 辞書にない場合はAIに聞く
-                    if (!this.apiKey) return alert("辞書にない単語だからAIに聞きたいんだけど、APIキーが空だよ！");
+                    if (!this.apiKey) return alert("APIキーがセットされてないよ！");
                     this.isWorking = true;
                     try {
                         const prompt = `プログラミング用語「${word}」について、初心者向けに100文字程度で分かりやすく解説してください。`;
@@ -324,7 +319,6 @@
                     }
                 },
 
-                // ⚡ AIによるコード全体の解説
                 async analyzeFullCode() {
                     if (!this.apiKey) return alert("APIキーを教えてね！");
                     this.isWorking = true;
@@ -348,7 +342,7 @@
                 },
 
                 async callGemini(prompt) {
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`;
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
