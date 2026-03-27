@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CodeRunner - Pro Debugger</title>
+    
+    <link rel="icon" href="https://img.icons8.com/fluency/48/rocket.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/144/rocket.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    
+    <script src="https://unpkg.com/php-wasm@0.0.9/dist/php-wasm.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+        .console-output { font-family: 'Fira Code', 'Courier New', monospace; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans h-screen flex flex-col" x-data="runnerApp">
+
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-2xl shrink-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="flex gap-2">
+                    <a href="index.html" class="bg-white/5 hover:bg-white/10 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-white/10">📖 Lexicon</a>
+                    <a href="builder.html" class="bg-white/5 hover:bg-white/10 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-white/10">🛠️ Builder</a>
+                </div>
+                <h1 class="text-xl font-black italic tracking-tighter flex items-center gap-2">
+                    <span class="bg-rose-500 text-white px-2 py-1 rounded text-lg">🚀</span>
+                    CODE<span class="text-rose-400">RUNNER</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-4 flex-1 justify-end">
+                <div class="hidden md:flex flex-col items-end mr-2">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">Engine Status</span>
+                    <span class="text-[10px] text-green-400 font-bold" x-text="engineStatus"></span>
+                </div>
+                <input type="password" x-model="apiKey" class="bg-slate-950 border border-slate-700 p-2 rounded text-white text-xs focus:ring-1 focus:ring-rose-500 outline-none w-40" placeholder="Gemini API Key...">
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        
+        <section class="flex-1 flex flex-col border-r border-slate-700 min-h-[40vh]">
+            <div class="bg-slate-800 p-2 flex justify-between items-center border-b border-slate-700">
+                <div class="flex gap-1">
+                    <template x-for="lang in ['JavaScript', 'Python', 'PHP', 'HTML']">
+                        <button @click="changeLang(lang)" 
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                                :class="selectedLang === lang ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-700'"
+                                x-text="lang"></button>
+                    </template>
+                </div>
+                <button @click="runCode()" :disabled="isRunning" class="bg-green-600 hover:bg-green-500 disabled:bg-slate-600 text-white px-6 py-1.5 rounded-lg font-black text-sm transition shadow-lg flex items-center gap-2 active:scale-95">
+                    <span x-show="!isRunning">▶ 実行</span>
+                    <span x-show="isRunning" class="flex items-center gap-1">
+                        <svg class="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Running...
+                    </span>
+                </button>
+            </div>
+            
+            <div class="flex-1 relative bg-slate-950">
+                <textarea x-model="code" class="w-full h-full p-6 bg-transparent text-rose-100 font-mono text-sm outline-none resize-none custom-scrollbar" spellcheck="false" placeholder="// ここにコードを入力して実行ボタンを押してね！"></textarea>
+                
+                <button @click="sendToBuilder()" class="absolute bottom-4 right-4 bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-full transition border border-white/10" title="Builderへ保存">
+                    📦
+                </button>
+            </div>
+        </section>
+
+        <section class="flex-1 flex flex-col bg-slate-900">
+            <div class="bg-slate-800 p-2 border-b border-slate-700 flex justify-between items-center">
+                <div class="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Console / Preview Output</div>
+                <div class="flex gap-2">
+                    <button @click="clearOutput()" class="text-[10px] text-slate-400 hover:text-white transition uppercase font-bold">Clear</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto p-4 custom-scrollbar bg-black/30 console-output">
+                <template x-if="selectedLang === 'HTML'">
+                    <iframe x-ref="htmlPreview" class="w-full h-full bg-white rounded-lg"></iframe>
+                </template>
+
+                <template x-if="selectedLang !== 'HTML'">
+                    <div class="space-y-1">
+                        <template x-for="line in outputLog">
+                            <div class="flex gap-2 text-sm">
+                                <span class="text-slate-600 select-none">❯</span>
+                                <span :class="line.type === 'error' ? 'text-rose-400' : 'text-emerald-400'" class="whitespace-pre-wrap break-all" x-text="line.msg"></span>
+                            </div>
+                        </template>
+                        <div x-show="outputLog.length === 0" class="text-slate-600 italic text-sm">出力待ち...</div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="p-4 bg-slate-800 border-t border-slate-700">
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-400 flex items-center gap-1">
+                            <span class="text-rose-500">✨</span> Gemini AI Debugger
+                        </span>
+                        <button @click="askAI()" :disabled="isAILoading || !apiKey" class="text-[10px] bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white px-3 py-1 rounded-full font-bold transition shadow active:scale-95">
+                            AIにバグを直してもらう
+                        </button>
+                    </div>
+                    <div x-show="aiSuggestion" class="bg-slate-950 p-3 rounded-xl border border-indigo-500/30 text-xs text-indigo-200 animate-in fade-in slide-in-from-bottom-2" x-cloak>
+                        <div class="font-black mb-1 flex items-center gap-1 text-indigo-400">💡 解決案:</div>
+                        <div class="whitespace-pre-wrap leading-relaxed" x-text="aiSuggestion"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('runnerApp', () => ({
+                apiKey: localStorage.getItem('lexicon_apikey') || '',
+                selectedLang: 'JavaScript',
+                code: '',
+                outputLog: [],
+                isRunning: false,
+                isAILoading: false,
+                aiSuggestion: '',
+                engineStatus: 'Ready',
+                pyodide: null,
+                php: null,
+
+                async init() {
+                    this.$watch('apiKey', val => localStorage.setItem('lexicon_apikey', val));
+                    this.setInitialCode();
+                    
+                    // Pythonエンジンのバックグラウンド読み込み
+                    this.loadPython();
+                },
+
+                setInitialCode() {
+                    const samples = {
+                        'JavaScript': 'console.log("Hello, JavaScript!");\n\nconst greet = (name) => `こんにちは、${name}さん！`;\nconsole.log(greet("ユーザー"));',
+                        'Python': 'print("Hello from Python in Browser!")\n\nimport math\nprint(f"円周率は {math.pi} です")\n\n# リスト内包表記も動くよ\nsq = [x**2 for x in range(5)]\nprint(f"2乗のリスト: {sq}")',
+                        'PHP': '<?php\necho "Hello from PHP Wasm!\\n";\n\n$fruits = ["りんご", "バナナ", "みかん"];\nforeach ($fruits as $f) {\n    echo "果物: $f\\n";\n}\n?>',
+                        'HTML': '<div class="card">\n  <h1>HTML Preview</h1>\n  <p>Tailwindも使えるよ！</p>\n</div>\n\n<style>\n  body { background: #f0f4f8; padding: 20px; font-family: sans-serif; }\n  .card { background: white; padding: 2rem; border-radius: 1rem; shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }\n  h1 { color: #e11d48; }\n</style>'
+                    };
+                    this.code = samples[this.selectedLang];
+                },
+
+                changeLang(lang) {
+                    this.selectedLang = lang;
+                    this.outputLog = [];
+                    this.aiSuggestion = '';
+                    this.setInitialCode();
+                    if (lang === 'Python' && !this.pyodide) this.loadPython();
+                    if (lang === 'PHP' && !this.php) this.loadPHP();
+                },
+
+                async loadPython() {
+                    this.engineStatus = 'Python Loading...';
+                    try {
+                        this.pyodide = await loadPyodide();
+                        this.engineStatus = 'Python Ready';
+                    } catch (e) {
+                        this.engineStatus = 'Python Error';
+                    }
+                },
+
+async loadPHP() {
+    if (this.php) return;
+    this.engineStatus = 'PHP Loading...';
+    
+    try {
+        // ライブラリが「PHP」か「Php」どちらの名前で読み込まれても対応する
+        const PhpClass = window.PHP || window.Php;
+        
+        if (PhpClass) {
+            this.php = new PhpClass();
+            this.engineStatus = 'PHP Ready';
+            console.log("PHP Engine Loaded successfully!");
+        } else {
+            // ライブラリ自体が読み込まれていない場合
+            throw new Error("Library script not found in window object.");
+        }
+    } catch (e) {
+        this.engineStatus = 'PHP Load Failed';
+        console.error("PHP Load Error:", e);
+        // 具体的なエラー内容をコンソールに出すようにしたよ
+        this.outputLog.push({ type: 'error', msg: "PHPエンジンの起動に失敗したよ。ブラウザの『追跡防止』や『広告ブロック』がオンになっていないか確認してね！" });
+    }
+},
+
+                async runCode() {
+                    this.isRunning = true;
+                    this.outputLog = [];
+                    this.aiSuggestion = '';
+
+                    try {
+                        if (this.selectedLang === 'JavaScript') {
+                            this.runJS();
+                        } else if (this.selectedLang === 'Python') {
+                            await this.runPython();
+                        } else if (this.selectedLang === 'PHP') {
+                            await this.runPHP();
+                        } else if (this.selectedLang === 'HTML') {
+                            this.runHTML();
+                        }
+                    } catch (err) {
+                        this.outputLog.push({ type: 'error', msg: err.message });
+                    } finally {
+                        this.isRunning = false;
+                    }
+                },
+
+                runJS() {
+                    // console.log をトラップする
+                    const oldLog = console.log;
+                    console.log = (...args) => {
+                        this.outputLog.push({ type: 'info', msg: args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ') });
+                        oldLog(...args);
+                    };
+                    try {
+                        eval(this.code);
+                    } catch (e) {
+                        this.outputLog.push({ type: 'error', msg: e.stack || e.message });
+                    }
+                    console.log = oldLog;
+                },
+
+                async runPython() {
+                    if (!this.pyodide) {
+                        this.outputLog.push({ type: 'error', msg: 'Pythonエンジンを準備中です。数秒待ってからやり直してね。' });
+                        return;
+                    }
+                    try {
+                        // 標準出力をキャプチャ
+                        this.pyodide.setStdout({
+                            batched: (str) => { this.outputLog.push({ type: 'info', msg: str }); }
+                        });
+                        await this.pyodide.runPythonAsync(this.code);
+                    } catch (e) {
+                        this.outputLog.push({ type: 'error', msg: e.message });
+                    }
+                },
+
+                async runPHP() {
+                    if (!this.php) {
+                        this.outputLog.push({ type: 'error', msg: 'PHPエンジンを準備中です。' });
+                        return;
+                    }
+                    try {
+                        const output = await this.php.run(this.code);
+                        this.outputLog.push({ type: 'info', msg: output });
+                    } catch (e) {
+                        this.outputLog.push({ type: 'error', msg: e.message });
+                    }
+                },
+
+                runHTML() {
+                    this.$nextTick(() => {
+                        const iframe = this.$refs.htmlPreview;
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        doc.open();
+                        doc.write(`
+                            <script src="https://cdn.tailwindcss.com"><\/script>
+                            ${this.code}
+                        `);
+                        doc.close();
+                    });
+                },
+
+                clearOutput() {
+                    this.outputLog = [];
+                    this.aiSuggestion = '';
+                },
+
+                async askAI() {
+                    if (!this.apiKey) return;
+                    this.isAILoading = true;
+                    
+                    const lastError = this.outputLog.filter(l => l.type === 'error').pop();
+                    const errorMsg = lastError ? lastError.msg : "エラーは出ていないようですが、改善点があれば教えてください。";
+
+                    try {
+                        const prompt = `あなたはデバッグの達人です。
+                        言語: ${this.selectedLang}
+                        ソースコード:
+                        ${this.code}
+                        
+                        エラー内容:
+                        ${errorMsg}
+                        
+                        上記のバグの原因と、修正したコードのポイントを短く的確に教えてください。`;
+
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+                        const data = await response.json();
+                        this.aiSuggestion = data.candidates[0].content.parts[0].text;
+                    } catch (e) {
+                        this.aiSuggestion = "AI解析に失敗しました。キーを確認してね。";
+                    } finally {
+                        this.isAILoading = false;
+                    }
+                },
+
+                sendToBuilder() {
+                    const savedTemplates = JSON.parse(localStorage.getItem('myCodeTemplates') || '[]');
+                    const newTemp = {
+                        id: Date.now(),
+                        lang: this.selectedLang,
+                        category: "ロジック",
+                        title: `Runnerからのエクスポート (${this.selectedLang})`,
+                        code: this.code
+                    };
+                    savedTemplates.unshift(newTemp);
+                    localStorage.setItem('myCodeTemplates', JSON.stringify(savedTemplates));
+                    alert("Builderに保存したよ！🛠️");
+                }
+            }));
+        });
+    </script>
+</body>
+</html>

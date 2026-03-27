@@ -27,7 +27,9 @@
                 <a href="index.html" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1 border border-white/20 shadow-sm" title="解析ツールへ戻る">
                     <span>⬅️</span> 📖 Lexicon
                 </a>
-                
+                <a href="runner.html" class="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white px-4 py-1.5 rounded-lg text-sm font-black transition flex items-center gap-1.5 shadow-lg active:scale-95" title="デバッガーを起動">
+        <span>🚀</span> CODE<span class="font-light text-rose-100">RUNNER</span>
+    </a>
                 <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-2">
                     <span class="bg-teal-500 text-white px-2 py-1 rounded text-xl">🛠️</span>
                     CODE<span class="text-teal-400">BUILDER</span>
@@ -83,6 +85,14 @@
                             <option value="PHP">PHP</option>
                             <option value="その他">その他</option>
                         </select>
+                        <select x-model="filterCategory" class="text-xs p-2 rounded-lg border bg-white outline-none flex-1 font-bold text-slate-600">
+                            <option value="All">すべてのカテゴリ</option>
+                            <option value="UIパーツ">UIパーツ</option>
+                            <option value="ロジック">ロジック</option>
+                            <option value="API通信">API通信</option>
+                            <option value="データ処理">データ処理</option>
+                            <option value="その他">その他</option>
+                        </select>
                     </div>
                     <input type="text" x-model="searchQuery" placeholder="テンプレを検索..." class="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
                 </div>
@@ -93,15 +103,18 @@
                              class="group relative p-3 rounded-xl cursor-pointer transition border"
                              :class="selectedTemplate?.id === item.id ? 'bg-teal-50 border-teal-400 shadow-sm' : 'bg-white border-slate-100 hover:border-teal-200 hover:bg-slate-50'">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="text-[10px] font-black px-2 py-0.5 rounded"
-                                    :class="{
-                                        'bg-orange-100 text-orange-700': item.lang === 'HTML',
-                                        'bg-blue-100 text-blue-700': item.lang === 'CSS',
-                                        'bg-yellow-100 text-yellow-700': item.lang === 'JavaScript',
-                                        'bg-indigo-100 text-indigo-700': item.lang === 'Python',
-                                        'bg-purple-100 text-purple-700': item.lang === 'PHP',
-                                        'bg-slate-200 text-slate-700': item.lang === 'その他' || item.lang === 'All'
-                                    }" x-text="item.lang"></span>
+                                <div class="flex gap-1">
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded"
+                                        :class="{
+                                            'bg-orange-100 text-orange-700': item.lang === 'HTML',
+                                            'bg-blue-100 text-blue-700': item.lang === 'CSS',
+                                            'bg-yellow-100 text-yellow-700': item.lang === 'JavaScript',
+                                            'bg-indigo-100 text-indigo-700': item.lang === 'Python',
+                                            'bg-purple-100 text-purple-700': item.lang === 'PHP',
+                                            'bg-slate-200 text-slate-700': item.lang === 'その他' || item.lang === 'All'
+                                        }" x-text="item.lang"></span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200" x-text="item.category"></span>
+                                </div>
                                 <button @click.stop="deleteTemplate(item.id)" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-1">🗑️</button>
                             </div>
                             <div class="font-bold text-slate-700 text-sm truncate" x-text="item.title"></div>
@@ -127,12 +140,19 @@
                     
                     <div class="p-4 border-b bg-slate-50 shrink-0 flex flex-wrap gap-4 justify-between items-center">
                         <div class="flex-1 min-w-[200px] flex gap-2">
-                            <select x-model="selectedTemplate.lang" class="p-2 text-sm border rounded-lg font-bold bg-white focus:ring-2 focus:ring-teal-500 outline-none w-32 shrink-0">
+                            <select x-model="selectedTemplate.lang" class="p-2 text-sm border rounded-lg font-bold bg-white focus:ring-2 focus:ring-teal-500 outline-none w-28 shrink-0">
                                 <option value="HTML">HTML</option>
                                 <option value="CSS">CSS</option>
                                 <option value="JavaScript">JavaScript</option>
                                 <option value="Python">Python</option>
                                 <option value="PHP">PHP</option>
+                                <option value="その他">その他</option>
+                            </select>
+                            <select x-model="selectedTemplate.category" class="p-2 text-sm border rounded-lg font-bold bg-white focus:ring-2 focus:ring-teal-500 outline-none w-28 shrink-0">
+                                <option value="UIパーツ">UIパーツ</option>
+                                <option value="ロジック">ロジック</option>
+                                <option value="API通信">API通信</option>
+                                <option value="データ処理">データ処理</option>
                                 <option value="その他">その他</option>
                             </select>
                             <input type="text" x-model="selectedTemplate.title" class="flex-1 p-2 text-sm border rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="テンプレのタイトル">
@@ -185,9 +205,10 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('builderApp', () => ({
-                apiKey: localStorage.getItem('lexicon_apikey') || '', // APIキーはLexiconと共有！
+                apiKey: localStorage.getItem('lexicon_apikey') || '',
                 searchQuery: '',
                 filterLang: 'All',
+                filterCategory: 'All', // 新規追加: カテゴリフィルター
                 aiPrompt: '',
                 isGenerating: false,
                 selectedTemplate: null,
@@ -195,36 +216,40 @@
                 toast: { show: false, message: '', icon: '✅' },
                 previewTimeout: null,
                 
-                // 🎁 Geminiがプロの目線で用意した「超便利」初期テンプレ群
+                // デフォルトテンプレにcategoryを追加
                 defaultTemplates: [
-                    { id: 1, lang: "HTML", title: "別タブで開くリンク (aタグ)", code: "\n<a href=\"（ここにリンクを貼り付けて）\" target=\"_blank\" rel=\"noopener noreferrer\">（リンク先の名前）</a>" },
-                    { id: 2, lang: "HTML", title: "レスポンシブHTML 基本骨格", code: "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>ドキュメント</title>\n    <style>\n        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }\n    </style>\n</head>\n<body>\n    <h1>Hello World!</h1>\n</body>\n</html>" },
-                    { id: 3, lang: "CSS", title: "【スタイリッシュ】サイバーパンク風 光るボタン", code: "\n<button class=\"cyber-btn\">システム起動</button>\n\n\n<style>\n.cyber-btn {\n    background: transparent;\n    color: #0ff;\n    border: 2px solid #0ff;\n    padding: 15px 30px;\n    font-size: 1.2rem;\n    font-weight: bold;\n    text-transform: uppercase;\n    cursor: pointer;\n    box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;\n    transition: 0.2s;\n    border-radius: 5px;\n}\n.cyber-btn:hover {\n    background: #0ff;\n    color: #000;\n    box-shadow: 0 0 20px #0ff, inset 0 0 20px #0ff;\n}\n</style>" },
-                    { id: 4, lang: "CSS", title: "【スタイリッシュ】グラスモーフィズム (すりガラス風) カード", code: "\n<div class=\"glass-card\">\n  <h2>Glassmorphism</h2>\n  <p>背景が透ける、モダンで美しいUIです。</p>\n</div>\n\n\n<style>\nbody {\n  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);\n  height: 100vh; display: flex; align-items: center; justify-content: center;\n}\n/* ここからがテンプレ本体 */\n.glass-card {\n    background: rgba(255, 255, 255, 0.2);\n    backdrop-filter: blur(10px);\n    -webkit-backdrop-filter: blur(10px);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    border-radius: 15px;\n    padding: 30px;\n    color: white;\n    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);\n    max-w-md;\n}\n</style>" },
-                    { id: 5, lang: "JavaScript", title: "Fetch API (JSONデータ取得の基本)", code: "async function fetchData() {\n    try {\n        // APIのURLを指定\n        const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');\n        if (!response.ok) throw new Error('ネットワークエラー');\n        \n        const data = await response.json();\n        console.log('取得成功:', data);\n    } catch (error) {\n        console.error('取得失敗:', error);\n    }\n}\n\nfetchData();" },
-                    { id: 6, lang: "JavaScript", title: "要素のスムーススクロール", code: "document.querySelectorAll('a[href^=\"#\"]').forEach(anchor => {\n    anchor.addEventListener('click', function (e) {\n        e.preventDefault();\n        const target = document.querySelector(this.getAttribute('href'));\n        if(target) {\n            target.scrollIntoView({\n                behavior: 'smooth'\n            });\n        }\n    });\n});" },
-                    { id: 7, lang: "PHP", title: "PDO データベース接続 (安全なテンプレ)", code: "<?php\n$host = 'localhost';\n$db   = 'database_name'; // データベース名\n$user = 'root';          // ユーザー名\n$pass = 'password';      // パスワード\n$charset = 'utf8mb4';\n\n$dsn = \"mysql:host=$host;dbname=$db;charset=$charset\";\n$options = [\n    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,\n    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,\n    PDO::ATTR_EMULATE_PREPARES   => false,\n];\n\ntry {\n     $pdo = new PDO($dsn, $user, $pass, $options);\n     // エコーはテスト用。本番では消すこと。\n     echo \"データベース接続成功！\";\n} catch (\\PDOException $e) {\n     throw new \\PDOException($e->getMessage(), (int)$e->getCode());\n}\n?>" },
-                    { id: 8, lang: "Python", title: "requestsモジュールでAPIを叩く", code: "import requests\n\ndef get_api_data(url):\n    try:\n        response = requests.get(url)\n        response.raise_for_status() # エラーなら例外を発生\n        return response.json()\n    except requests.exceptions.RequestException as e:\n        print(f\"通信エラーが発生しました: {e}\")\n        return None\n\n# 使い方\ndata = get_api_data('https://api.github.com')\nif data:\n    print(data)" },
-                    { id: 9, lang: "Python", title: "ファイルの安全な読み書き (with構文)", code: "# 書き込み\nwith open('data.txt', 'w', encoding='utf-8') as file:\n    file.write('こんにちは、Python！\\n')\n    file.write('ファイル書き込みのテストです。\\n')\n\n# 読み込み\nwith open('data.txt', 'r', encoding='utf-8') as file:\n    content = file.read()\n    print(content)" }
+                    { id: 1, lang: "HTML", category: "UIパーツ", title: "別タブで開くリンク (aタグ)", code: "\n<a href=\"（ここにリンクを貼り付けて）\" target=\"_blank\" rel=\"noopener noreferrer\">（リンク先の名前）</a>" },
+                    { id: 2, lang: "HTML", category: "その他", title: "レスポンシブHTML 基本骨格", code: "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>ドキュメント</title>\n    <style>\n        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }\n    </style>\n</head>\n<body>\n    <h1>Hello World!</h1>\n</body>\n</html>" },
+                    { id: 3, lang: "CSS", category: "UIパーツ", title: "サイバーパンク風 光るボタン", code: "\n<button class=\"cyber-btn\">システム起動</button>\n\n\n<style>\n.cyber-btn {\n    background: transparent;\n    color: #0ff;\n    border: 2px solid #0ff;\n    padding: 15px 30px;\n    font-size: 1.2rem;\n    font-weight: bold;\n    text-transform: uppercase;\n    cursor: pointer;\n    box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;\n    transition: 0.2s;\n    border-radius: 5px;\n}\n.cyber-btn:hover {\n    background: #0ff;\n    color: #000;\n    box-shadow: 0 0 20px #0ff, inset 0 0 20px #0ff;\n}\n</style>" },
+                    { id: 4, lang: "CSS", category: "UIパーツ", title: "グラスモーフィズム (すりガラス風)", code: "\n<div class=\"glass-card\">\n  <h2>Glassmorphism</h2>\n  <p>背景が透ける、モダンで美しいUIです。</p>\n</div>\n\n\n<style>\nbody {\n  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);\n  height: 100vh; display: flex; align-items: center; justify-content: center;\n}\n/* ここからがテンプレ本体 */\n.glass-card {\n    background: rgba(255, 255, 255, 0.2);\n    backdrop-filter: blur(10px);\n    -webkit-backdrop-filter: blur(10px);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    border-radius: 15px;\n    padding: 30px;\n    color: white;\n    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);\n    max-w-md;\n}\n</style>" },
+                    { id: 5, lang: "JavaScript", category: "API通信", title: "Fetch API (JSONデータ取得の基本)", code: "async function fetchData() {\n    try {\n        // APIのURLを指定\n        const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');\n        if (!response.ok) throw new Error('ネットワークエラー');\n        \n        const data = await response.json();\n        console.log('取得成功:', data);\n    } catch (error) {\n        console.error('取得失敗:', error);\n    }\n}\n\nfetchData();" },
+                    { id: 6, lang: "JavaScript", category: "UIパーツ", title: "要素のスムーススクロール", code: "document.querySelectorAll('a[href^=\"#\"]').forEach(anchor => {\n    anchor.addEventListener('click', function (e) {\n        e.preventDefault();\n        const target = document.querySelector(this.getAttribute('href'));\n        if(target) {\n            target.scrollIntoView({\n                behavior: 'smooth'\n            });\n        }\n    });\n});" },
+                    { id: 7, lang: "PHP", category: "データ処理", title: "PDO データベース接続 (安全なテンプレ)", code: "<?php\n$host = 'localhost';\n$db   = 'database_name';\n$user = 'root';\n$pass = 'password';\n$charset = 'utf8mb4';\n\n$dsn = \"mysql:host=$host;dbname=$db;charset=$charset\";\n$options = [\n    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,\n    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,\n    PDO::ATTR_EMULATE_PREPARES   => false,\n];\n\ntry {\n     $pdo = new PDO($dsn, $user, $pass, $options);\n     echo \"データベース接続成功！\";\n} catch (\\PDOException $e) {\n     throw new \\PDOException($e->getMessage(), (int)$e->getCode());\n}\n?>" },
+                    { id: 8, lang: "Python", category: "API通信", title: "requestsモジュールでAPIを叩く", code: "import requests\n\ndef get_api_data(url):\n    try:\n        response = requests.get(url)\n        response.raise_for_status()\n        return response.json()\n    except requests.exceptions.RequestException as e:\n        print(f\"通信エラーが発生しました: {e}\")\n        return None\n\n# 使い方\ndata = get_api_data('https://api.github.com')\nif data:\n    print(data)" },
+                    { id: 9, lang: "Python", category: "データ処理", title: "ファイルの安全な読み書き", code: "# 書き込み\nwith open('data.txt', 'w', encoding='utf-8') as file:\n    file.write('こんにちは、Python！\\n')\n    file.write('ファイル書き込みのテストです。\\n')\n\n# 読み込み\nwith open('data.txt', 'r', encoding='utf-8') as file:\n    content = file.read()\n    print(content)" }
                 ],
                 templates: [],
 
                 init() {
-                    // APIキーの同期
                     this.$watch('apiKey', val => {
                         localStorage.setItem('lexicon_apikey', val);
                     });
 
-                    // 保存されたテンプレの読み込み
-                    const saved = JSON.parse(localStorage.getItem('myCodeTemplates') || '[]');
+                    let saved = JSON.parse(localStorage.getItem('myCodeTemplates') || '[]');
+                    
+                    // 古いデータにcategoryがない場合の互換性対策
+                    saved = saved.map(item => ({
+                        ...item,
+                        category: item.category || 'その他'
+                    }));
+
                     if (saved.length === 0) {
                         this.templates = [...this.defaultTemplates];
-                        this.saveTemplates(); // 初回起動時はデフォルトを保存
+                        this.saveTemplates();
                     } else {
                         this.templates = saved;
                     }
 
-                    // 選択中のテンプレが変わったらプレビューを更新
                     this.$watch('selectedTemplate', () => this.updatePreviewDebounced());
                 },
 
@@ -232,8 +257,9 @@
                     const q = this.searchQuery.toLowerCase();
                     return this.templates.filter(t => {
                         const matchLang = this.filterLang === 'All' || t.lang === this.filterLang;
+                        const matchCat = this.filterCategory === 'All' || t.category === this.filterCategory;
                         const matchText = t.title.toLowerCase().includes(q) || t.code.toLowerCase().includes(q);
-                        return matchLang && matchText;
+                        return matchLang && matchCat && matchText;
                     });
                 },
 
@@ -243,13 +269,14 @@
                 },
 
                 selectTemplate(item) {
-                    this.selectedTemplate = item; // 参照をそのまま渡して直接編集させる
+                    this.selectedTemplate = item;
                 },
 
                 createNew() {
                     const newTemp = {
                         id: Date.now(),
                         lang: "HTML",
+                        category: "その他",
                         title: "新しいテンプレート",
                         code: ""
                     };
@@ -264,7 +291,7 @@
                     if (this.selectedTemplate && this.selectedTemplate.id === id) {
                         this.selectedTemplate = null;
                     }
-                    this.saveTemplates(false); // 通知なしで保存
+                    this.saveTemplates(false);
                     this.showToast("削除しました", "🗑️");
                 },
 
@@ -281,7 +308,6 @@
                     });
                 },
 
-                // 🚀 プレビューの遅延更新（入力するたびにカクつかないように）
                 updatePreviewDebounced() {
                     if (!this.showPreview) return;
                     clearTimeout(this.previewTimeout);
@@ -295,7 +321,6 @@
                     
                     let htmlContent = this.selectedTemplate.code;
 
-                    // CSS単体の場合、見やすくするためにHTMLのガワを被せる
                     if (this.selectedTemplate.lang === 'CSS') {
                         if (!htmlContent.includes('<html')) {
                             htmlContent = `
@@ -309,7 +334,6 @@
                         }
                     }
 
-                    // JavaScript単体の場合
                     if (this.selectedTemplate.lang === 'JavaScript') {
                         if (!htmlContent.includes('<script>')) {
                              htmlContent = `
@@ -328,9 +352,8 @@
                     doc.close();
                 },
 
-                // 🪄 指定された「gemini-3-flash-preview」でAI生成
                 async generateTemplate() {
-                    if (!this.apiKey) return alert("右上にAPIキーを入力してね！(Lexiconと同じでOKだよ)");
+                    if (!this.apiKey) return alert("右上にAPIキーを入力してね！");
                     this.isGenerating = true;
 
                     try {
@@ -340,11 +363,11 @@
                         以下のフォーマットで正確に出力してください（余計な挨拶は不要です）。
                         
                         【言語】: (HTML, CSS, JavaScript, Python, PHP, その他のいずれか)
+                        【カテゴリ】: (UIパーツ, ロジック, API通信, データ処理, その他のいずれか)
                         【タイトル】: (テンプレートのわかりやすい短い名前)
                         【コード】:
                         (ここにコード本体を記述。マークダウンの\`\`\`などは不要で、直接コードを書いてください)`;
 
-                        // ※API仕様に基づき、ユーザーの要望通りモデル名を指定
                         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`;
                         
                         const response = await fetch(apiUrl, {
@@ -361,23 +384,23 @@
                         const data = await response.json();
                         const text = data.candidates[0].content.parts[0].text;
 
-                        // テキストのパース処理
                         const langMatch = text.match(/【言語】:\s*(.*)/);
+                        const catMatch = text.match(/【カテゴリ】:\s*(.*)/);
                         const titleMatch = text.match(/【タイトル】:\s*(.*)/);
                         let codeContent = "";
                         
                         if (text.includes('【コード】:')) {
                             codeContent = text.split('【コード】:')[1].trim();
                         } else {
-                            codeContent = text; // フォールバック
+                            codeContent = text;
                         }
                         
-                        // 余計なマークダウン（```html など）を取り除く
                         codeContent = codeContent.replace(/^```[\w]*\n/gm, '').replace(/```$/gm, '').trim();
 
                         const newTemp = {
                             id: Date.now(),
                             lang: langMatch ? langMatch[1].trim() : "その他",
+                            category: catMatch ? catMatch[1].trim() : "その他",
                             title: titleMatch ? titleMatch[1].trim() : "AI生成テンプレート",
                             code: codeContent
                         };
@@ -390,13 +413,12 @@
                         this.showToast("AIがテンプレを生成しました！", "✨");
 
                     } catch (e) {
-                        alert("AI生成に失敗しました: " + e.message + "\n※モデル名「gemini-3-flash-preview」がAPIキーの権限で使えない場合は、Lexiconと同じ2.5-flashなどに書き換えて試してみてね！");
+                        alert("AI生成に失敗しました: " + e.message);
                     } finally {
                         this.isGenerating = false;
                     }
                 },
 
-                // データのバックアップ関連
                 exportJSON() {
                     const data = JSON.stringify(this.templates, null, 2);
                     const blob = new Blob([data], { type: 'application/json' });
@@ -417,7 +439,6 @@
                         try {
                             const importedData = JSON.parse(e.target.result);
                             if (Array.isArray(importedData)) {
-                                // 既存のデータと結合し、重複IDを排除
                                 const merged = [...importedData, ...this.templates];
                                 const uniqueData = Array.from(new Map(merged.map(item => [item.id, item])).values());
                                 
